@@ -39,6 +39,10 @@ class InternalKeluarHandler extends ActionHandler
             $where = "`tahun`='{$this->tahun}'";
         }
 
+        if(!file_exists("uploads/{$this->tahun}/internal_keluar") && !is_dir("uploads/{$this->tahun}/internal_keluar")){
+            mkdir("uploads/{$this->tahun}/internal_keluar");
+        }
+
         $params['page'] = 'internal_keluar';
         $params['data'] = InternalKeluarModel::paginate($where,'*','tanggal DESC,nomor_naskah DESC');
 

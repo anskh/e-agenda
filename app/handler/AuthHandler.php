@@ -36,6 +36,12 @@ class AuthHandler extends ActionHandler
 
                 if($row){
                     if(password_verify($model->password, $row['password'])) {
+                        if(!file_exists('uploads') && !is_dir('uploads')) {
+                            mkdir('uploads');
+                        }
+                        if(!file_exists('uploads/' . $model->tahun) && !is_dir('uploads/' . $model->tahun)) {
+                            mkdir('uploads/' . $model->tahun);
+                        }
                         $this->session->set('tahun', $model->tahun);
                         $this->session->setUserId(strval($row['id']));
                         $this->session->setUserHash(sha1($row['password'] . $request->getServerParams()['HTTP_USER_AGENT']));

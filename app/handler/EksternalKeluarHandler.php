@@ -39,6 +39,10 @@ class EksternalKeluarHandler extends ActionHandler
             $where = "`tahun`='{$this->tahun}'";
         }
 
+        if(!file_exists("uploads/{$this->tahun}/eksternal_keluar") && !is_dir("uploads/{$this->tahun}/eksternal_keluar")){
+            mkdir("uploads/{$this->tahun}/eksternal_keluar");
+        }
+
         $params['page'] = 'eksternal_keluar';
         $params['data'] = EksternalKeluarModel::paginate($where, '*', 'tanggal DESC,nomor_naskah DESC');
 

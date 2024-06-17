@@ -38,6 +38,9 @@ class MemoKeluarHandler extends ActionHandler
         }else{
             $where = "`tahun`='{$this->tahun}'";
         }
+        if(!file_exists("uploads/{$this->tahun}/memo_keluar") && !is_dir("uploads/{$this->tahun}/memo_keluar")){
+            mkdir("uploads/{$this->tahun}/memo_keluar");
+        }
 
         $params['page'] = 'memo_keluar';
         $params['data'] = MemoKeluarModel::paginate($where,'*','tanggal DESC,nomor_naskah DESC');

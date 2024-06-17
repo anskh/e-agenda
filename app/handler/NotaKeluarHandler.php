@@ -39,6 +39,10 @@ class NotaKeluarHandler extends ActionHandler
             $where = "`tahun`='{$this->tahun}'";
         }
 
+        if(!file_exists("uploads/{$this->tahun}/nota_keluar") && !is_dir("uploads/{$this->tahun}/nota_keluar")){
+            mkdir("uploads/{$this->tahun}/nota_keluar");
+        }
+
         $params['page'] = 'nota_keluar';
         $params['data'] = NotaKeluarModel::paginate($where,'*','tanggal DESC,nomor_naskah DESC');
 

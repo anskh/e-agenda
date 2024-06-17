@@ -39,6 +39,10 @@ class TugasKeluarHandler extends ActionHandler
             $where = "`tahun`='{$this->tahun}'";
         }
 
+        if(!file_exists("uploads/{$this->tahun}/tugas_keluar") && !is_dir("uploads/{$this->tahun}/tugas_keluar")){
+            mkdir("uploads/{$this->tahun}/tugas_keluar");
+        }
+
         $params['page'] = 'tugas_keluar';
         $params['data'] = TugasKeluarModel::paginate($where,'*','tanggal DESC,nomor_naskah DESC');
 

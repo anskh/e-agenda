@@ -39,6 +39,10 @@ class DinasKeluarHandler extends ActionHandler
             $where = "`tahun`='{$this->tahun}'";
         }
 
+        if(!file_exists("uploads/{$this->tahun}/dinas_keluar") && !is_dir("uploads/{$this->tahun}/dinas_keluar")){
+            mkdir("uploads/{$this->tahun}/dinas_keluar");
+        }
+
         $params['page'] = 'dinas_keluar';
         $params['data'] = DinasKeluarModel::paginate($where, '*', 'tanggal DESC,nomor_naskah DESC');
 
