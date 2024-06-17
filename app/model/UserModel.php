@@ -16,7 +16,7 @@ class UserModel extends DbModel
      */
     public function __construct()
     {
-        $this->table = 'user';
+        $this->table = static::table();
         $this->fields = [
             'username',
             'password',
@@ -36,6 +36,6 @@ class UserModel extends DbModel
      */
     public static function table(): string
     {
-        return 'user';
+        return db()->getTable('user');
     }
 }

@@ -7,7 +7,7 @@ use Core\Model\DbModel;
 /**
  * NaskahMasukModel
  */
-class NaskahMasukModel extends DbModel
+class NaskahMasukModel extends NaskahModel
 {    
     /**
      * __construct
@@ -16,7 +16,6 @@ class NaskahMasukModel extends DbModel
      */
     public function __construct()
     {
-        $this->table = 'naskah_masuk';
         $this->fields = [
             'nomor',
             'tahun',
@@ -41,20 +40,6 @@ class NaskahMasukModel extends DbModel
      */
     public static function table(): string
     {
-        return 'naskah_masuk';
-    }
-    
-    /**
-     * getNomorTerakhir
-     *
-     * @param  mixed $tahun
-     * @return int
-     */
-    public static function getNomorTerakhir(string $tahun) : int
-    {
-        $stmt = static::db()->query("SELECT MAX(CAST(`nomor` AS UNSIGNED)) as `last` FROM " . static::db()->getTable(static::table()) ." WHERE `tahun`='" . $tahun . "' LIMIT 1");
-        $result = $stmt->fetchColumn();
-
-        return $result ? $result : 0;
+        return db()->getTable('naskah_masuk');
     }
 }

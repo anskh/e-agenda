@@ -121,7 +121,7 @@ class BootstrapForm
      * @param  mixed $keyLabel
      * @return string
      */
-    public function select(string $attribute, array $data, array $options = [], null|int|string $selectedValue = null, null|string|int $keyValue = null, null|string|int $keyLabel = null): string
+    public function select(string $attribute, array $data, array $options = [], $selectedValue = null, $keyValue = null, $keyLabel = null): string
     {
         $html = '<select id="id_' . $attribute . '" name="'. $attribute . '" ' . attr_to_string($options) .'>' . PHP_EOL;
         foreach($data as $d){

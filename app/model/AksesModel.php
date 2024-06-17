@@ -8,7 +8,7 @@ class AksesModel extends DbModel
 {
     public function __construct()
     {
-        $this->table = 'akses';
+        $this->table = static::table();
         $this->fields = [
             'kode',
             'nama',
@@ -22,7 +22,7 @@ class AksesModel extends DbModel
 
     public static function table(): string
     {
-        return 'akses';
+        return db()->getTable('akses');
     }
     public static function primaryKey(): string
     {

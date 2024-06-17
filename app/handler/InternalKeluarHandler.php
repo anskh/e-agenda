@@ -7,9 +7,9 @@ namespace App\Handler;
 use App\Model\InternalKeluarForm;
 use App\Model\InternalKeluarModel;
 use Exception;
-use Laminas\Diactoros\UploadedFile;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\UploadedFileInterface;
 
 class InternalKeluarHandler extends ActionHandler
 {
@@ -74,7 +74,7 @@ class InternalKeluarHandler extends ActionHandler
                 }else{
                     $filename = null;
                     foreach ($request->getUploadedFiles() as $file) {
-                        if ($file instanceof UploadedFile) {
+                        if ($file instanceof UploadedFileInterface) {
                             if ($file->getError() === UPLOAD_ERR_OK && $file->getSize() > 0) {
                                 $fileExt = strtolower(pathinfo($file->getClientFileName(), PATHINFO_EXTENSION));
                                 $allowd_file_ext = 'pdf';
@@ -85,9 +85,9 @@ class InternalKeluarHandler extends ActionHandler
                                 }else {
                                     $filename = sprintf('%d.pdf', time());
                                     try{
-                                        $file->moveTo("public/uploads/{$this->tahun}/internal_keluar/{$filename}");
+                                        $file->moveTo("uploads/{$this->tahun}/internal_keluar/{$filename}");
                                     }catch(Exception $e){
-                                        $this->session->addFlashError('Upload file surat internal gagal');
+                                        $this->session->addFlashError('Upload file surat internal gagal. Error:' . $e->getMessage());
                                         return redirect('internal_keluar');
                                     }
                                 }
@@ -95,27 +95,30 @@ class InternalKeluarHandler extends ActionHandler
                         }
                     }
                     if (!$model->hasError()) {
-                        if (InternalKeluarModel::create(
-                            [
-                                'akses' => $model->akses,
-                                'nomor' => $model->nomor,
-                                'fungsi' => $model->fungsi,
-                                'klasifikasi' => $model->klasifikasi,
-                                'tahun' => $this->tahun,
-                                'nomor_naskah' => $model->nomor_naskah,
-                                'perihal' => $model->perihal,
-                                'tanggal' => $model->tanggal,
-                                'tujuan' => $model->tujuan,
-                                'file' => $filename,
-                                'keterangan' => $model->keterangan,
-                                'user_create' => $this->user->getIdentity()->getId(),
-                                'create_at' => time()
-                            ]
-                        ) > 0) {
-                            $this->session->addFlashSuccess('Simpan data berhasil');
-                        }else {
-                            $this->session->addFlashError('Simpan data gagal');
+                        try{
+                            InternalKeluarModel::create(
+                                [
+                                    'akses' => $model->akses,
+                                    'nomor' => $model->nomor,
+                                    'fungsi' => $model->fungsi,
+                                    'klasifikasi' => $model->klasifikasi,
+                                    'tahun' => $this->tahun,
+                                    'nomor_naskah' => $model->nomor_naskah,
+                                    'perihal' => $model->perihal,
+                                    'tanggal' => $model->tanggal,
+                                    'tujuan' => $model->tujuan,
+                                    'file' => $filename,
+                                    'keterangan' => $model->keterangan,
+                                    'user_create' => $this->user->getIdentity()->getId(),
+                                    'create_at' => time()
+                                ]
+                                );
+                                $this->session->addFlashSuccess('Simpan data berhasil');
+                        }catch(Exception $e)
+                        {
+                            $this->session->addFlashError('Simpan data gagal. Error:' . $e->getMessage());
                         }
+
                         return redirect('internal_keluar');
                     }
                 }
@@ -158,7 +161,7 @@ class InternalKeluarHandler extends ActionHandler
             if ($model->validate() === true){
                 $filename = $data['file'] ?? null;
                 foreach ($request->getUploadedFiles() as $file) {
-                    if ($file instanceof UploadedFile) {
+                    if ($file instanceof UploadedFileInterface) {
                         if ($file->getError() === UPLOAD_ERR_OK && $file->getSize() > 0) {
                             $fileExt = strtolower(pathinfo($file->getClientFileName(), PATHINFO_EXTENSION));
                             $allowd_file_ext = 'pdf';
@@ -168,16 +171,14 @@ class InternalKeluarHandler extends ActionHandler
                                 $model->addError('form', "Tipe file harus pdf.");
                             }else {
                                 try{
-                                    $path = "public/uploads/{$this->tahun}/internal_keluar/";
-                                    if($filename){
-                                        if(file_exists($path .$filename)){
-                                            unlink($path . $filename);
-                                        }
+                                    $path = "uploads/{$this->tahun}/internal_keluar/";
+                                    if($filename && is_file($path .$filename)){
+                                        unlink($path . $filename);
                                     }
                                     $filename = sprintf('%d.pdf', time());
                                     $file->moveTo($path . $filename);
                                 }catch(Exception $e){
-                                    $this->session->addFlashError('Upload file surat internal gagal');
+                                    $this->session->addFlashError('Upload file surat internal gagal. Error:' . $e->getMessage());
                                     return redirect('internal_keluar');
                                 }
                             }
@@ -241,21 +242,15 @@ class InternalKeluarHandler extends ActionHandler
         if ($id) {
             $data = InternalKeluarModel::row('*', ['id=' => $id]);
             $filename = $data['file'] ?? null;
-            if ($filename) {
-                try{
-                    $path = "public/uploads/{$this->tahun}/internal_keluar/";
-                    if(file_exists($path . $filename)){
-                        unlink($path . $filename);
-                    }
-                }catch(Exception $e){
-                    $this->session->addFlashError('Hapus file surat internal gagal');
-                    return redirect('internal_keluar');
+             try{
+                $path = "uploads/{$this->tahun}/internal_keluar/";
+                if( $filename && is_file($path . $filename)){
+                    unlink($path . $filename);
                 }
-            }
-            if (InternalKeluarModel::delete(['id=' => $id]) > 0) {
+                InternalKeluarModel::delete(['id=' => $id]);
                 $this->session->addFlashSuccess('Hapus data berhasil');
-            } else {
-                $this->session->addFlashError('Hapus data gagal');
+            }catch(Exception $e){
+                $this->session->addFlashError('Hapus file surat internal gagal. Error:' . $e->getMessage());
             }
         }
 

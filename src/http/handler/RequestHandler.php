@@ -24,6 +24,8 @@ class RequestHandler implements RequestHandlerInterface
 {
     private ServerRequestInterface $request;
     private int $currentMiddleware;
+    private array $middleware;
+    private ResponseInterface $response;
 
     /**
      * __construct
@@ -31,9 +33,11 @@ class RequestHandler implements RequestHandlerInterface
      * @param  mixed $middleware
      * @return void
      */
-    public function __construct(private array $middleware, private ResponseInterface $response)
+    public function __construct(array $middleware, ResponseInterface $response)
     {
         $this->currentMiddleware = -1;
+        $this->middleware = $middleware;
+        $this->response = $response;
     }
 
     /**
@@ -56,9 +60,9 @@ class RequestHandler implements RequestHandlerInterface
      *
      * @param  mixed $middleware
      * @param  mixed $id
-     * @return static
+     * @return self
      */
-    public function addMiddleware(MiddlewareInterface $middleware, ?string $id = null): static
+    public function addMiddleware(MiddlewareInterface $middleware, ?string $id = null): self
     {
         $this->middleware[] = [
             "id" => $id,

@@ -39,7 +39,7 @@ class Session implements SessionInterface
      * @param  mixed $value
      * @return void
      */
-    public function set(string $property, mixed $value): void
+    public function set(string $property, $value): void
     {
         $_SESSION[$property] = $value;
     }
@@ -108,7 +108,7 @@ class Session implements SessionInterface
      * @param  mixed $defaultValue
      * @return mixed
      */
-    public function get(?string $property = null, mixed $defaultValue = null): mixed
+    public function get(?string $property = null, $defaultValue = null)
     {
         if($property === null){
             return $_SESSION ?? $defaultValue;
@@ -121,7 +121,7 @@ class Session implements SessionInterface
      *
      * @return mixed
      */
-    public function getUserId():mixed
+    public function getUserId()
     {
         return $this->get($this->userIdAttribute);
     }
@@ -130,7 +130,7 @@ class Session implements SessionInterface
      *
      * @return mixed
      */
-    public function getUserHash():mixed
+    public function getUserHash()
     {
         return $this->get($this->userHashAttribute);
     }
@@ -151,7 +151,7 @@ class Session implements SessionInterface
      * @param  mixed $property
      * @return mixed
      */
-    public function unset(?string $property = null) : mixed
+    public function unset(?string $property = null)
     {
         $value = $this->get($property);
         if($property){
@@ -282,7 +282,7 @@ class Session implements SessionInterface
      * @param  mixed $type
      * @return FlashMessage|array
      */
-    public function flash(?string $type = null):FlashMessage|array
+    public function flash(?string $type = null)
     {
         if($type === null){
             $flash = $this->unset(self::FLASH);

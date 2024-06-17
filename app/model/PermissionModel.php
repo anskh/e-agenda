@@ -16,7 +16,7 @@ class PermissionModel extends DbModel
      */
     public function __construct()
     {
-        $this->table = 'permission';
+        $this->table = static::table();
         $this->fields = [
             'nama',
             'user',
@@ -34,6 +34,6 @@ class PermissionModel extends DbModel
      */
     public static function table(): string
     {
-        return 'permission';
+        return db()->getTable('permission');
     }
 }

@@ -8,7 +8,7 @@ class FungsiModel extends DbModel
 {
     public function __construct()
     {
-        $this->table = 'fungsi';
+        $this->table = static::table();
         $this->fields = [
             'kode',
             'nama',
@@ -22,7 +22,7 @@ class FungsiModel extends DbModel
 
     public static function table(): string
     {
-        return 'fungsi';
+        return db()->getTable('fungsi');
     }
     public static function primaryKey(): string
     {

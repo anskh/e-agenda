@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Core\Config;
 
+use ArrayAccess;
+
 /**
  * Configuration container
  * -----------
@@ -14,9 +16,11 @@ namespace Core\Config;
  * @since v1.0.0
  * @package Core\Config
  */
-class Config implements ConfigInterface
+class Config implements ArrayAccess
 {
     private array $container = [];
+    private string $configPath;
+    private string $environment;
 
     /**
      * __construct
@@ -24,15 +28,17 @@ class Config implements ConfigInterface
      * @return void
      */
     public function __construct(
-        private string $configPath,
-        private string $environment
+        string $configPath,
+        string $environment
     ) {
+        $this->configPath = $configPath;
+        $this->environment = $environment;
     }
 
     /**
      * @inheritdoc
      */
-    public function offsetExists(mixed $offset): bool
+    public function offsetExists($offset): bool
     {
         if (isset($this->container[$offset])) {
             return true;
@@ -77,7 +83,7 @@ class Config implements ConfigInterface
     /**
      * @inheritdoc
      */
-    public function offsetGet(mixed $offset): mixed
+    public function offsetGet($offset)
     {
         return $this->offsetExists($offset) ? $this->container[$offset] : null;
     }
@@ -85,7 +91,7 @@ class Config implements ConfigInterface
     /**
      * @inheritdoc
      */
-    public function offsetSet(mixed $offset, mixed $value): void
+    public function offsetSet($offset, $value): void
     {
         if (is_null($offset)) {
             $this->container[] = $value;
@@ -97,7 +103,7 @@ class Config implements ConfigInterface
     /**
      * @inheritdoc
      */
-    public function offsetUnset(mixed $offset): void
+    public function offsetUnset($offset): void
     {
         unset($this->container[$offset]);
     }

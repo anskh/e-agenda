@@ -18,15 +18,15 @@ interface UserIdentityInterface
     /**
      * getId
      *
-     * @return string
+     * @return string|int|null
      */
-    public function getId(): string|int|null;
+    public function getId();
     /**
      * getName
      *
-     * @return string
+     * @return string|null
      */
-    public function getName(): string|null;
+    public function getName();
     /**
      * getRoles
      *

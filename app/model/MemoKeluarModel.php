@@ -7,7 +7,7 @@ use Core\Model\DbModel;
 /**
  * MemoKeluarModel
  */
-class MemoKeluarModel extends DbModel
+class MemoKeluarModel extends NaskahModel
 {    
     /**
      * __construct
@@ -16,7 +16,6 @@ class MemoKeluarModel extends DbModel
      */
     public function __construct()
     {
-        $this->table = 'memo_keluar';
         $this->fields = [
             'nomor',
             'fungsi',
@@ -43,20 +42,6 @@ class MemoKeluarModel extends DbModel
      */
     public static function table(): string
     {
-        return 'memo_keluar';
-    }
-    
-    /**
-     * getNomorTerakhir
-     *
-     * @param  mixed $tahun
-     * @return int
-     */
-    public static function getNomorTerakhir(string $tahun) : int
-    {
-        $stmt = static::db()->query("SELECT MAX(CAST(`nomor` AS UNSIGNED)) as `last` FROM " . static::db()->getTable(static::table()) ." WHERE `tahun`='" . $tahun . "' LIMIT 1");
-        $result = $stmt->fetchColumn();
-
-        return $result ? $result : 0;
+        return db()->getTable('memo_keluar');
     }
 }

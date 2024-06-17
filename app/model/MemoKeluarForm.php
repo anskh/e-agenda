@@ -8,7 +8,7 @@ use Core\Model\FormModel;
 
 class MemoKeluarForm extends FormModel
 {
-    public ?int $id=null;
+    public $id=null;
     public ?string $nomor = null;
     public ?string $fungsi = null;
     public ?string $klasifikasi = null;

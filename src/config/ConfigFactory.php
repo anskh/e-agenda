@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Core\Config;
 
-use Core\Abstraction\FactoryInterface;
+use ArrayAccess;
 use Core\Config\ConfigInterface;
 
 /**
@@ -16,7 +16,7 @@ use Core\Config\ConfigInterface;
  */
 class ConfigFactory
 {
-    private static ?ConfigInterface $config = null;
+    private static ?ArrayAccess $config = null;
     
     /**
      * create
@@ -24,9 +24,9 @@ class ConfigFactory
      * @param  mixed $configDir
      * @param  mixed $environment
      * @param  mixed $initialConfig
-     * @return ConfigInterface
+     * @return ArrayAccess
      */
-    public static function create(string $configDir, string $environment, array $initialConfig = []) : ConfigInterface
+    public static function create(string $configDir, string $environment, array $initialConfig = []) : ArrayAccess
     {
         if(static::$config === null){
             static::$config = new Config($configDir, $environment, $initialConfig);

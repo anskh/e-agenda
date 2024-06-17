@@ -8,7 +8,7 @@ class KlasifikasiModel extends DbModel
 {
     public function __construct()
     {
-        $this->table = 'klasifikasi';
+        $this->table = static::table();
         $this->fields = [
             'kode',
             'nama',
@@ -22,7 +22,7 @@ class KlasifikasiModel extends DbModel
 
     public static function table(): string
     {
-        return 'klasifikasi';
+        return db()->getTable('klasifikasi');
     }
     public static function primaryKey(): string{
         return 'kode';

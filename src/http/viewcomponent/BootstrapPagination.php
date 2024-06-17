@@ -263,9 +263,9 @@ class BootstrapPagination
      *
      * @param  mixed $total_records
      * @param  mixed $data
-     * @return static
+     * @return self
      */
-    public static function create(int $total_records, array $data = []): static
+    public static function create(int $total_records, array $data = []): self
     {
         return new static($total_records, $data);
     }

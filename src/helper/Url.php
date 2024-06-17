@@ -23,10 +23,9 @@ class Url
      * getBasePath
      *
      * @param  mixed $path
-     * @param  mixed $hideString
      * @return string
      */
-    public static function getBasePath(string $path = '', string $hideString = '/public'): string
+    public static function getBasePath(string $path = ''): string
     {
         if (static::$basePath === null) {
             if (array_key_exists('PATH_INFO', $_SERVER) === true) {
@@ -35,11 +34,7 @@ class Url
                 $toReplace = '/' . basename($_SERVER['SCRIPT_FILENAME']);
                 $basePath = str_replace($toReplace, '', $_SERVER['PHP_SELF']);
             }
-            if($hideString){
-                if (str_ends_with($basePath, $hideString) === true) {
-                    $basePath = str_replace('/public', '', $basePath);
-                }
-            }
+
             static::$basePath = $basePath;
         }
 

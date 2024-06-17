@@ -8,7 +8,7 @@ use Core\Model\FormModel;
 
 class PasswordForm extends FormModel
 {
-    public ?int $id = null;
+    public $id = null;
     public ?string $password = null;
     public ?string $oldpassword = null;
     public ?string $repassword = null;

@@ -14,7 +14,7 @@ use PDOStatement;
  *
  * @author Khaerul Anas <anasikova@gmail.com>
  * @since v1.0.0
- * @package Core\Db
+ * @package Corephp\Db
  */
 class Database
 {
@@ -25,54 +25,54 @@ class Database
 
     const DSN   = 'dsn';
     const USER  = 'user';
-    const PASS  = 'pass';
+    const PASS  = 'password';
 
     const MYSQL  = 'mysql';
     const SQLITE = 'sqlite';
     const PGSQL  = 'pgsql';
     const SQLSRV = 'sqlsrv';
-    
+
     /**
      * __construct
      *
      * @param  mixed $name
      * @param  mixed $dsn
-     * @param  mixed $user
-     * @param  mixed $pass
+     * @param  mixed $username
+     * @param  mixed $password
      * @param  mixed $prefix
      * @param  mixed $options
      * @return void
      */
-    public function __construct(string $name, string $dsn, string $user, string $pass, string $prefix = '', ?array $options =null)
+    public function __construct(string $name, string $dsn, ?string $username = null, ?string $password = null, string $prefix = '', ?array $options = null)
     {
         $this->name = $name;
         $this->prefix = $prefix;
-        $this->pdo = new PDO($dsn, $user, $pass, $options);
+        $this->pdo = new PDO($dsn, $username, $password, $options);
         $this->type = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
     }
-    
+
     /**
      * exec
      *
      * @param  mixed $sql
-     * @return int
+     * @return int|false
      */
-    public function exec($sql): int|false
+    public function exec($sql)
     {
         return $this->pdo->exec($sql);
-    }    
+    }
 
     /**
      * query
      *
      * @param  mixed $sql
-     * @return PDOStatement
+     * @return PDOStatement|false
      */
-    public function query($sql): PDOStatement|false
+    public function query($sql)
     {
         return $this->pdo->query($sql);
     }
-        
+
     /**
      * getConnectionName
      *
@@ -81,7 +81,7 @@ class Database
     public function getConnectionName(): string
     {
         return $this->name;
-    }    
+    }
     /**
      * getDbPrefix
      *
@@ -90,7 +90,7 @@ class Database
     public function getDbPrefix(): string
     {
         return $this->prefix;
-    }    
+    }
     /**
      * getTable
      *
@@ -101,7 +101,7 @@ class Database
     {
         return $this->e($this->prefix . $table);
     }
-    
+
     /**
      * insert
      *
@@ -123,9 +123,8 @@ class Database
                 $affectedRows += $this->insert($row, $table);
             }
         } else {
-            $table = $this->getTable($table);
-            $data = array_filter($data, function(mixed $val){
-                return $val ? true : false;
+            $data = array_filter($data, function ($val) {
+                return is_null($val) ? false: true;
             });
             $keys = array_keys($data);
             $sql = "INSERT INTO $table(" .  implode(',', array_map(fn ($attr) => $this->e($attr), $keys)) . ")VALUES(" . implode(',', array_fill(0, count($keys), '?')) . ");";
@@ -137,16 +136,16 @@ class Database
 
         return $affectedRows;
     }
-    
+
     /**
      * update
      *
      * @param  mixed $data
-     * @param  mixed $table
-     * @param  mixed $where
+     * @param  string $table
+     * @param  array|string|null $where
      * @return int
      */
-    public function update(array $data, string $table, array|string|null $where = null): int
+    public function update(array $data, string $table, $where = null): int
     {
         $affectedRows = 0;
 
@@ -154,36 +153,34 @@ class Database
             return $affectedRows;
         }
 
-        $table = $this->getTable($table);
-
         $nullString = '';
         $filterData = [];
         foreach ($data as $key => $val) {
-            if (!$val) {
+            if (is_null($val)) {
                 $nullString .= "$key=NULL,";
             } else {
                 $filterData[$key] = $val;
             }
         }
 
-        if ($filterData) {
+        if (!empty($filterData)) {
             $sql = "UPDATE $table SET $nullString" . implode(',', array_map(fn ($attr) => $this->e($attr) . "=?", array_keys($filterData)));
         } else {
             $nullString = rtrim($nullString, ',');
             $sql = "UPDATE $table SET $nullString";
         }
 
-        $criteria = $this->parseWhere($where);
-        if(is_array($where) && count($where ?? []) > 2) {
-            array_pop($where);
+        $criteria = is_array($where) ? QueryHelper::parseWhere($where) : $where ?? '';
+        if ($criteria) {
+            $criteria = ' WHERE ' . $criteria;
         }
         $sql .= $criteria;
-        
+
         $stmt = $this->pdo->prepare($sql . ";");
 
-        $params = is_array($where) ? array_merge(array_values($filterData), array_values($where)) : array_values($filterData);
-        $params = array_filter($params, function(mixed $val){
-            return $val ? true : false;
+        $params = is_array($where) ? array_merge(array_values($filterData), QueryHelper::parseParams($where)) : array_values($filterData);
+        $params = array_filter($params, function ($val) {
+            return is_null($val) ? false : true;
         });
         if ($stmt->execute($params)) {
             return $stmt->rowCount();
@@ -191,69 +188,57 @@ class Database
 
         return $affectedRows;
     }
-    
+
     /**
      * delete
      *
-     * @param  mixed $table
-     * @param  mixed $where
+     * @param  string $table
+     * @param  array|string|null  $where
      * @return int
      */
-    public function delete(string $table, array|string|null $where = null): int
+    public function delete(string $table, $where = null): int
     {
-        $table = $this->getTable($table);
         $sql = "DELETE FROM $table";
-        $criteria = $this->parseWhere($where);
+        $criteria = is_array($where) ? QueryHelper::parseWhere($where) : $where ?? '';
+        if ($criteria) {
+            $criteria = ' WHERE ' . $criteria;
+        }
         $sql .= $criteria;
         $stmt = $this->pdo->prepare($sql . ";");
-        if(is_array($where)){
-            if(count($where)>2){
-                array_pop($where);
-            }
-            if($stmt->execute(array_values($where))){
+        if (is_array($where)) {
+            $values = QueryHelper::parseParams($where);
+            if ($stmt->execute($values)) {
                 return $stmt->rowCount();
             }
-        }else{
-            if($stmt->execute()){
+        } else {
+            if ($stmt->execute()) {
                 return $stmt->rowCount();
             }
         }
 
         return 0;
     }
-    
+
+
     /**
      * select
      *
-     * @param  mixed $table
-     * @param  mixed $column
-     * @param  mixed $where
-     * @param  mixed $limit
-     * @param  mixed $orderby
-     * @param  mixed $fetch
-     * @return array
-     */
-    public function select(string $table, string $column = '*', array|string|null $where = null, int $limit=0, int $offset= -1, string|null $orderby = null, int $fetch = PDO::FETCH_ASSOC): array
-    { 
-        return $this->select_query($table, $column, $where, $limit, $offset, $orderby, $fetch);
-    }
-    
-    /**
-     * select_query
-     *
-     * @param  mixed $table
-     * @param  mixed $column
-     * @param  mixed $where
+     * @param  string $table
+     * @param  string $column
+     * @param  array|string|null  $where
      * @param  int $limit
      * @param  int $offset
-     * @param  mixed $orderby
-     * @param  mixed $fetch
+     * @param  ?string $orderby
+     * @param  int $fetch
      * @return array
      */
-    private function select_query(string $table, string $column = '*', array|string|null $where = null, int $limit = 0, int $offset = -1, string|null $orderby = null, int $fetch = PDO::FETCH_ASSOC): array {
-        $table = $this->getTable($table);
+    public function select(string $table, string $column = '*', $where = null, int $limit = 0, int $offset = -1, ?string $orderby = null, int $fetch = PDO::FETCH_ASSOC): array
+    {
         $sql = "SELECT $column FROM $table";
-        $criteria = $this->parseWhere($where);
+        $criteria = is_array($where) ? QueryHelper::parseWhere($where) : $where ?? '';
+        if ($criteria) {
+            $criteria = ' WHERE ' . $criteria;
+        }
         $sql .= $criteria;
         $result = [];
 
@@ -267,135 +252,111 @@ class Database
                 $sql .= ",{$limit}";
             }
         }
-        
+
         $stmt = $this->pdo->prepare($sql . ";");
-        if(is_array($where)){
-            if(count($where)>2){
-                array_pop($where);
-            }
-            $stmt->execute(array_values($where));
-        }else{
+        if (is_array($where)) {
+            $values = QueryHelper::parseParams($where);
+            $stmt->execute($values);
+        } else {
             $stmt->execute();
         }
-        if($limit===1){
+        if ($limit === 1) {
             $result = $stmt->fetch($fetch);
-        }else{
+        } else {
             $result = $stmt->fetchAll($fetch);
         }
-        return $result ? $result: [];
+        return is_array($result) ? $result : [];
     }
-    
+
     /**
      * getRow
      *
-     * @param  mixed $table
-     * @param  mixed $column
-     * @param  mixed $where
+     * @param  string $table
+     * @param  string $column
+     * @param  array|string|null  $where
      * @return array
      */
-    public function getRow(string $table, string $column = '*', array|string|null $where = null): array
-    {       
-        return $this->select_query($table, $column, $where, 1);
+    public function getRow(string $table, string $column = '*', $where = null): array
+    {
+        return $this->select($table, $column, $where, 1);
     }
-    
+
     /**
      * getRecordCount
      *
-     * @param  mixed $table
-     * @param  mixed $where
+     * @param  string $table
+     * @param  array|string|null  $where
      * @return int
      */
-    public function getRecordCount(string $table, array|string|null $where = null) : int {
-        $table = $this->getTable($table);
-        $criteria = $this->parseWhere($where); 
+    public function getRecordCount(string $table, $where = null): int
+    {
+        $criteria = is_array($where) ? QueryHelper::parseWhere($where) : $where ?? '';
+        if ($criteria) {
+            $criteria = ' WHERE ' . $criteria;
+        }
         $stmt = $this->pdo->prepare('SELECT COUNT(FOUND_ROWS()) as `record_count` FROM ' . $table . $criteria);
-        if(is_array($where)){
-            if(count($where)>2){
-                array_pop($where);
-            }
-            $stmt->execute(array_values($where));
-        }else{
+        if (is_array($where)) {
+            $values = QueryHelper::parseParams($where);
+            $stmt->execute($values);
+        } else {
             $stmt->execute();
         }
         $result = $stmt->fetch(PDO::FETCH_COLUMN);
-        return $result === false ? 0 : $result;
+        return is_bool($result) ? 0 : intval($result);
     }
-        
+
     /**
      * recordExists
      *
-     * @param  mixed $table
-     * @param  mixed $where
+     * @param  string $table
+     * @param  array|string|null  $where
      * @return bool
      */
-    public function recordExists(string $table, array|string|null $where = null) : bool {
-        $table = $this->getTable($table);
-        $criteria = $this->parseWhere($where);  
-        $stmt = $this->pdo->prepare('SELECT EXISTS(SELECT * FROM ' . $table . $criteria .' LIMIT 1) as `is_exists`');
-        if(is_array($where)){
-            if(count($where)>2){
-                array_pop($where);
-            }
-            $stmt->execute(array_values($where));
-        }else{
+    public function recordExists(string $table, $where = null): bool
+    {
+        $criteria = is_array($where) ? QueryHelper::parseWhere($where) : $where ?? '';
+        if ($criteria) {
+            $criteria = ' WHERE ' . $criteria;
+        }
+        $stmt = $this->pdo->prepare('SELECT EXISTS(SELECT * FROM ' . $table . $criteria . ' LIMIT 1) as `is_exists`');
+        if (is_array($where)) {
+            $values = QueryHelper::parseParams($where);
+            $stmt->execute($values);
+        } else {
             $stmt->execute();
         }
         $result = $stmt->fetch(PDO::FETCH_COLUMN);
-        return $result === 1 ? true: false;
-    }    
+        return intval($result) === 1 ? true : false;
+    }
     /**
      * drop
      *
      * @param  mixed $table
      * @return bool
      */
-    public function drop(string $table) : bool
+    public function drop(string $table): bool
     {
-        $result = $this->pdo->exec("DROP TABLE {$this->getTable($table)}");
-        if($result === false) {
+        $result = $this->pdo->exec("DROP TABLE {$table}");
+        if ($result === false) {
             return false;
         }
         return true;
-    }    
+    }
     /**
      * dropIfExist
      *
      * @param  mixed $table
      * @return bool
      */
-    public function dropIfExist(string $table) : bool
+    public function dropIfExist(string $table): bool
     {
-        $result = $this->pdo->exec("DROP TABLE IF EXISTS {$this->getTable($table)}");
-        if($result === false) {
+        $result = $this->pdo->exec("DROP TABLE IF EXISTS {$table}");
+        if ($result === false) {
             return false;
         }
         return true;
-    }    
-    /**
-     * parseWhere
-     *
-     * @param  mixed $where
-     * @return string
-     */
-    public function parseWhere(string|array|null $where = null) : string
-    {
-        $string_where = '';
-        if ($where) {
-            if (is_string($where)):
-                $string_where .= " WHERE " . $where;
-            elseif (is_array($where)):
-                $op = '';
-                if (count($where) > 2) {
-                    $op = ' ' . array_pop($where) . ' ';
-                }
-                $keys = array_keys($where);
-                $whereParams = array_map(fn ($attr) => "$attr?", $keys);
-                $string_where .= " WHERE " . implode($op, $whereParams);
-            endif;
-        }
-        return $string_where;
     }
-    
+
     /**
      * getType
      *
@@ -405,7 +366,7 @@ class Database
     {
         return $this->type;
     }
-    
+
     /**
      * e
      *

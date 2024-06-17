@@ -8,7 +8,7 @@ use Core\Model\FormModel;
 
 class EksternalKeluarForm extends FormModel
 {
-    public ?int $id=null;
+    public $id=null;
     public ?string $akses = null;
     public ?string $nomor = null;
     public ?string $fungsi = null;

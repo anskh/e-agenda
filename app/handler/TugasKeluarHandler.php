@@ -7,9 +7,9 @@ namespace App\Handler;
 use App\Model\TugasKeluarForm;
 use App\Model\TugasKeluarModel;
 use Exception;
-use Laminas\Diactoros\UploadedFile;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\UploadedFileInterface;
 
 class TugasKeluarHandler extends ActionHandler
 {
@@ -74,7 +74,7 @@ class TugasKeluarHandler extends ActionHandler
                 }else{
                     $filename = null;
                     foreach ($request->getUploadedFiles() as $file) {
-                        if ($file instanceof UploadedFile) {
+                        if ($file instanceof UploadedFileInterface) {
                             if ($file->getError() === UPLOAD_ERR_OK && $file->getSize() > 0) {
                                 $fileExt = strtolower(pathinfo($file->getClientFileName(), PATHINFO_EXTENSION));
                                 $allowd_file_ext = 'pdf';
@@ -87,10 +87,10 @@ class TugasKeluarHandler extends ActionHandler
                                 }else {
                                     $filename = sprintf('%d.pdf', time());
                                     try{
-                                        $file->moveTo("public/uploads/{$this->tahun}/tugas_keluar/{$filename}");
+                                        $file->moveTo("uploads/{$this->tahun}/tugas_keluar/{$filename}");
                                     }catch(Exception $e){
-                                        $this->session->addFlashError('Upload file surat tugas gagal');
-                                        break;
+                                        $this->session->addFlashError('Upload file surat tugas gagal. Error : '.$e->getMessage());
+                                        return redirect('tugas_keluar');
                                     }
                                 }
                             }
@@ -160,7 +160,7 @@ class TugasKeluarHandler extends ActionHandler
             if ($model->validate() === true){
                 $filename = $data['file'] ?? null;
                 foreach ($request->getUploadedFiles() as $file) {
-                    if ($file instanceof UploadedFile) {
+                    if ($file instanceof UploadedFileInterface) {
                         if ($file->getError() === UPLOAD_ERR_OK && $file->getSize() > 0) {
                             $fileExt = strtolower(pathinfo($file->getClientFileName(), PATHINFO_EXTENSION));
                             $allowd_file_ext = 'pdf';
@@ -170,16 +170,15 @@ class TugasKeluarHandler extends ActionHandler
                                 $model->addError('form', "Tipe file harus pdf.");
                             }else {
                                 try{
-                                    $path = "public/uploads/{$this->tahun}/tugas_keluar/";
-                                    if($filename){
-                                        if(file_exists($path .$filename)){
-                                            unlink($path . $filename);
-                                        }
+                                    $path = "uploads/{$this->tahun}/tugas_keluar/";
+                                    if($filename && is_file($path .$filename)){
+                                        unlink($path . $filename);
                                     }
+                                    
                                     $filename = sprintf('%d.pdf', time());
                                     $file->moveTo($path . $filename);
                                 }catch(Exception $e){
-                                    $this->session->addFlashError('info', 'Upload file surat tugas gagal');
+                                    $this->session->addFlashError('Upload file surat tugas gagal. Error:'.$e->getMessage());
                                     return redirect('tugas_keluar');
                                 }
                             }
@@ -243,21 +242,16 @@ class TugasKeluarHandler extends ActionHandler
         if ($id) {
             $data = TugasKeluarModel::row('*', ['id=' => $id]);
             $filename = $data['file'] ?? null;
-            if ($filename) {
-                try{
-                    $path = "public/uploads/{$this->tahun}/tugas_keluar/";
-                    if(file_exists($path . $filename)){
-                        unlink($path . $filename);
-                    }
-                }catch(Exception $e){
-                    $this->session->addFlashError('Hapus file surat tugas gagal');
-                    return redirect('tugas_keluar');
+
+            try{
+                $path = "uploads/{$this->tahun}/tugas_keluar/";
+                if($filename && is_file($path . $filename)){
+                    unlink($path . $filename);
                 }
-            }
-            if (TugasKeluarModel::delete(['id=' => $id]) > 0) {
+                TugasKeluarModel::delete(['id=' => $id]);
                 $this->session->addFlashSuccess('Hapus data berhasil');
-            } else {
-                $this->session->addFlashError('Hapus data gagal');
+            }catch(Exception $e){
+                $this->session->addFlashError('Hapus data gagal. Error: '. $e->getMessage());
             }
         }
 

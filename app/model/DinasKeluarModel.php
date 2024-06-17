@@ -2,12 +2,10 @@
 
 namespace App\Model;
 
-use Core\Model\DbModel;
-
 /**
  * DinasKeluarModel
  */
-class DinasKeluarModel extends DbModel
+class DinasKeluarModel extends NaskahModel
 {    
     /**
      * __construct
@@ -16,7 +14,6 @@ class DinasKeluarModel extends DbModel
      */
     public function __construct()
     {
-        $this->table = 'dinas_keluar';
         $this->fields = [
             'akses',
             'nomor',
@@ -44,20 +41,7 @@ class DinasKeluarModel extends DbModel
      */
     public static function table(): string
     {
-        return 'dinas_keluar';
+        return db()->getTable('dinas_keluar');
     }
-    
-    /**
-     * getNomorTerakhir
-     *
-     * @param  mixed $tahun
-     * @return int
-     */
-    public static function getNomorTerakhir(string $tahun) : int
-    {
-        $stmt = static::db()->query("SELECT MAX(CAST(`nomor` AS UNSIGNED)) as `last` FROM " . static::db()->getTable(static::table()) ." WHERE `tahun`='" . $tahun . "' LIMIT 1");
-        $result = $stmt->fetchColumn();
 
-        return $result ? $result : 0;
-    }
 }

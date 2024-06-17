@@ -8,7 +8,7 @@ use Core\Model\FormModel;
 
 class NaskahMasukForm extends FormModel
 {
-    public ?int $id=null;
+    public $id=null;
     public ?string $nomor = null;
     public ?string $nomor_naskah = null;
     public ?string $perihal = null;

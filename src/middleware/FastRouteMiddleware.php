@@ -56,9 +56,6 @@ class FastRouteMiddleware implements MiddlewareInterface
         $fastRoute = $router->getDispatcher();
 
         $path = $request->getUri()->getPath();
-        if (str_contains($path, '/public/')) {
-            $path = str_replace('/public', '', $path);
-        }
         $route = $fastRoute->dispatch($request->getMethod(), $path);
 
         if ($route[0] === Dispatcher::NOT_FOUND) {

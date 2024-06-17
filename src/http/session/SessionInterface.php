@@ -22,7 +22,7 @@ interface SessionInterface
      * @param  mixed $value
      * @return void
      */
-    public function set(string $property, mixed $value): void;
+    public function set(string $property, $value): void;
 
     /**
      * csrfName
@@ -67,19 +67,19 @@ interface SessionInterface
      * @param  mixed $defaultValue
      * @return mixed
      */
-    public function get(?string $property = null, mixed $defaultValue = null): mixed;
+    public function get(?string $property = null, $defaultValue = null);
     /**
      * getUserId
      *
      * @return mixed
      */
-    public function getUserId():mixed;
+    public function getUserId();
     /**
      * getUserHash
      *
      * @return mixed
      */
-    public function getUserHash():mixed;
+    public function getUserHash();
     /**
      * has
      *
@@ -94,7 +94,7 @@ interface SessionInterface
      * @param  mixed $property
      * @return mixed
      */
-    public function unset(?string $property = null) : mixed;
+    public function unset(?string $property = null);
     /**
      * unsetUserId
      *
@@ -177,7 +177,7 @@ interface SessionInterface
      * @param  mixed $type
      * @return FlashMessage|array
      */
-    public function flash(?string $type = null):FlashMessage|array;
+    public function flash(?string $type = null);
     
     /**
      * hasFlash

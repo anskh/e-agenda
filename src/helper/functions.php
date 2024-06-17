@@ -2,14 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Helper\Service as HelperService;
 use Core\AppFactory;
 use Core\Helper\Url;
 use Core\Helper\Config;
 use Core\Db\Database;
 use Core\Db\DatabaseFactory;
 use Core\Helper\Service;
-use Core\Helper\Token;
 use Core\Http\Session\SessionInterface;
 
 /**
@@ -28,7 +26,7 @@ if (!function_exists('config')) {
      * @param  mixed $defaultValue
      * @return mixed
      */
-    function config(mixed $offset, mixed $defaultValue = null): mixed
+    function config($offset, $defaultValue = null)
     {
         return Config::get($offset, $defaultValue);
     }
@@ -85,7 +83,7 @@ if (!function_exists('is_route')) {
      * @param  mixed $name
      * @return bool
      */
-    function is_route(array|string $name): bool
+    function is_route($name): bool
     {
         static $path;
         if (!$path) {
@@ -116,7 +114,7 @@ if (!function_exists('attr_to_string')) {
      * @param  mixed $attributes
      * @return string
      */
-    function attr_to_string(mixed $attributes): string
+    function attr_to_string($attributes): string
     {
         if (empty($attributes)) {
             return '';

@@ -7,9 +7,9 @@ namespace App\Handler;
 use App\Model\NaskahMasukForm;
 use App\Model\NaskahMasukModel;
 use Exception;
-use Laminas\Diactoros\UploadedFile;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\UploadedFileInterface;
 
 class NaskahMasukHandler extends ActionHandler
 {
@@ -72,7 +72,7 @@ class NaskahMasukHandler extends ActionHandler
                 }else{
                     $filename = null;
                     foreach ($request->getUploadedFiles() as $file) {
-                        if ($file instanceof UploadedFile) {
+                        if ($file instanceof UploadedFileInterface) {
                             if ($file->getError() === UPLOAD_ERR_OK && $file->getSize() > 0) {
                                 $fileExt = strtolower(pathinfo($file->getClientFileName(), PATHINFO_EXTENSION));
                                 $allowd_file_ext = 'pdf';
@@ -83,9 +83,9 @@ class NaskahMasukHandler extends ActionHandler
                                 }else {
                                     $filename = sprintf('%d.pdf', time());
                                     try{
-                                        $file->moveTo("public/uploads/{$this->tahun}/naskah_masuk/{$filename}");
+                                        $file->moveTo("uploads/{$this->tahun}/naskah_masuk/{$filename}");
                                     }catch(Exception $e){
-                                        $this->session->addFlashError('Upload file naskah gagal');
+                                        $this->session->addFlashError('Upload file naskah gagal. Error:'. $e->getMessage());
                                         return redirect('naskah_masuk');
                                     }
                                 }
@@ -151,7 +151,7 @@ class NaskahMasukHandler extends ActionHandler
             if ($model->validateWith($request) === true){
                 $filename = $data['file'] ?? null;
                 foreach ($request->getUploadedFiles() as $file) {
-                    if ($file instanceof UploadedFile) {
+                    if ($file instanceof UploadedFileInterface) {
                         if ($file->getError() === UPLOAD_ERR_OK && $file->getSize() > 0) {
                             $fileExt = strtolower(pathinfo($file->getClientFileName(), PATHINFO_EXTENSION));
                             $allowd_file_ext = 'pdf';
@@ -161,16 +161,14 @@ class NaskahMasukHandler extends ActionHandler
                                 $model->addError('form', "Tipe file harus pdf.");
                             }else {
                                 try{
-                                    $path = "public/uploads/{$this->tahun}/naskah_masuk/";
-                                    if($filename){
-                                        if(file_exists($path .$filename)){
-                                            unlink($path . $filename);
-                                        }
+                                    $path = "uploads/{$this->tahun}/naskah_masuk/";
+                                    if($filename && is_file($path .$filename)){
+                                        unlink($path . $filename);
                                     }
                                     $filename = sprintf('%d.pdf', time());
                                     $file->moveTo($path . $filename);
                                 }catch(Exception $e){
-                                    $this->session->addFlashError('Upload file naskah gagal');
+                                    $this->session->addFlashError('Upload file naskah gagal. Error : '.$e->getMessage());
                                     return redirect('naskah_masuk');
                                 }
                             }
@@ -231,21 +229,16 @@ class NaskahMasukHandler extends ActionHandler
         if ($id) {
             $data = NaskahMasukModel::row('*', ['id=' => $id]);
             $filename = $data['file'] ?? null;
-            if ($filename) {
-                try{
-                    $path = "public/uploads/{$this->tahun}/naskah_masuk/";
-                    if(file_exists($path . $filename)){
-                        unlink($path . $filename);
-                    }
-                }catch(Exception $e){
-                    $this->session->addFlashError('Hapus file naskah gagal');
-                    return redirect('naskah_masuk');
+
+            try{
+                $path = "uploads/{$this->tahun}/naskah_masuk/";
+                if($filename && is_file($path . $filename)){
+                    unlink($path . $filename);
                 }
-            }
-            if (NaskahMasukModel::delete(['id=' => $id]) > 0) {
+                NaskahMasukModel::delete(['id=' => $id]);
                 $this->session->addFlashSuccess('Hapus data berhasil');
-            } else {
-                $this->session->addFlashError('Hapus data gagal');
+            }catch(Exception $e){
+                $this->session->addFlashError('Hapus data gagal. Error:'.$e->getMessage());
             }
         }
 

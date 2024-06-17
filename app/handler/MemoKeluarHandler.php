@@ -7,9 +7,9 @@ namespace App\Handler;
 use App\Model\MemoKeluarForm;
 use App\Model\MemoKeluarModel;
 use Exception;
-use Laminas\Diactoros\UploadedFile;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\UploadedFileInterface;
 
 class MemoKeluarHandler extends ActionHandler
 {
@@ -74,7 +74,7 @@ class MemoKeluarHandler extends ActionHandler
                 }else{
                     $filename = null;
                     foreach ($request->getUploadedFiles() as $file) {
-                        if ($file instanceof UploadedFile) {
+                        if ($file instanceof UploadedFileInterface) {
                             if ($file->getError() === UPLOAD_ERR_OK && $file->getSize() > 0) {
                                 $fileExt = strtolower(pathinfo($file->getClientFileName(), PATHINFO_EXTENSION));
                                 $allowd_file_ext = 'pdf';
@@ -85,9 +85,9 @@ class MemoKeluarHandler extends ActionHandler
                                 }else {
                                     $filename = sprintf('%d.pdf', time());
                                     try{
-                                        $file->moveTo("public/uploads/{$this->tahun}/memo_keluar/{$filename}");
+                                        $file->moveTo("uploads/{$this->tahun}/memo_keluar/{$filename}");
                                     }catch(Exception $e){
-                                        $this->session->addFlashError('Upload file memo gagal');
+                                        $this->session->addFlashError('Upload file memo gagal. Error:' . $e->getMessage());
                                         return redirect('memo_keluar');
                                     }
                                 }
@@ -157,7 +157,7 @@ class MemoKeluarHandler extends ActionHandler
             if ($model->validate() === true){
                 $filename = $data['file'] ?? null;
                 foreach ($request->getUploadedFiles() as $file) {
-                    if ($file instanceof UploadedFile) {
+                    if ($file instanceof UploadedFileInterface) {
                         if ($file->getError() === UPLOAD_ERR_OK && $file->getSize() > 0) {
                             $fileExt = strtolower(pathinfo($file->getClientFileName(), PATHINFO_EXTENSION));
                             $allowd_file_ext = 'pdf';
@@ -167,16 +167,14 @@ class MemoKeluarHandler extends ActionHandler
                                 $model->addError('form', "Tipe file harus pdf.");
                             }else {
                                 try{
-                                    $path = "public/uploads/{$this->tahun}/memo_keluar/";
-                                    if($filename){
-                                        if(file_exists($path .$filename)){
-                                            unlink($path . $filename);
-                                        }
+                                    $path = "uploads/{$this->tahun}/memo_keluar/";
+                                    if($filename && is_file($path .$filename)){
+                                        unlink($path . $filename);
                                     }
                                     $filename = sprintf('%d.pdf', time());
                                     $file->moveTo($path . $filename);
                                 }catch(Exception $e){
-                                    $this->session->addFlashError('Upload file memo gagal');
+                                    $this->session->addFlashError('Upload file memo gagal. Error: '.$e->getMessage());
                                     return redirect('memo_keluar');
                                 }
                             }
@@ -239,21 +237,15 @@ class MemoKeluarHandler extends ActionHandler
         if ($id) {
             $data = MemoKeluarModel::row('*', ['id=' => $id]);
             $filename = $data['file'] ?? null;
-            if ($filename) {
-                try{
-                    $path = "public/uploads/{$this->tahun}/memo_keluar/";
-                    if(file_exists($path . $filename)){
-                        unlink($path . $filename);
-                    }
-                }catch(Exception $e){
-                    $this->session->addFlashError('Hapus file memo gagal');
-                    return redirect('memo_keluar');
+            try{
+                $path = "uploads/{$this->tahun}/memo_keluar/";
+                if($filename && is_file($path . $filename)){
+                    unlink($path . $filename);
                 }
-            }
-            if (MemoKeluarModel::delete(['id=' => $id]) > 0) {
+                MemoKeluarModel::delete(['id=' => $id]);
                 $this->session->addFlashSuccess('Hapus data berhasil');
-            } else {
-                $this->session->addFlashError('Hapus data gagal');
+            }catch(Exception $e){
+                $this->session->addFlashError('Hapus data gagal. Error: '.$e->getMessage());
             }
         }
 

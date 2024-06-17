@@ -6,11 +6,10 @@ use App\Helper\Service;
 use Core\Helper\Url;
 use Core\Http\Auth\UserPrincipalInterface;
 use Core\Http\Renderer\ViewRendererFactory;
-use Core\Http\ViewComponent\FlashMessage;
 use Core\Model\FormModel;
-use Laminas\Diactoros\Response;
-use Laminas\Diactoros\Response\JsonResponse;
-use Laminas\Diactoros\Response\RedirectResponse;
+use HttpSoft\Message\Response;
+use HttpSoft\Response\JsonResponse;
+use HttpSoft\Response\RedirectResponse;
 use Psr\Http\Message\ResponseInterface;
 
 if(!function_exists('asset')){
@@ -52,9 +51,9 @@ if (!function_exists('auth')) {
      * auth
      *
      * @param  mixed $request
-     * @return null|UserPrincipalInterface
+     * @return ?UserPrincipalInterface
      */
-    function auth(): UserPrincipalInterface
+    function auth(): ?UserPrincipalInterface
     {
         return Service::auth();
     }
@@ -66,7 +65,7 @@ if (!function_exists('render_flash')) {
      * @param  mixed $flash
      * @return string
      */
-    function render_flash(array|FlashMessage $flash): string
+    function render_flash($flash): string
     {
         $html = '';
         if(is_array($flash) && $flash){

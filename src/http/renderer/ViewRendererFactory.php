@@ -18,7 +18,7 @@ use Exception;
  */
 class ViewRendererFactory
 {
-    private static array $renderer = [];
+    private static $renderer = null;
     
     /**
      * create
@@ -27,84 +27,10 @@ class ViewRendererFactory
      */
     static public function create(): ViewRendererInterface
     {
-        $engine = Config::get('view.engine');
         $viewPath = Config::get('view.path');
-        if($engine === 'plates'){
-            return static::plates($viewPath);
-        }elseif($engine === 'blade'){
-            return static::blade($viewPath);
-        }elseif($engine === 'twig'){
-            return static::twig($viewPath);
-        }else{
-            return static::default($viewPath);
-        }
-    }
-    
-    /**
-     * plates
-     *
-     * @param  mixed $viewPath
-     * @return PlatesRenderer
-     */
-    static function plates(string $viewPath): PlatesRenderer
-    {
-        if(!array_key_exists($viewPath, static::$renderer)){
-            static::$renderer[$viewPath] = new PlatesRenderer($viewPath);
-        }elseif(!(static::$renderer[$viewPath] instanceof PlatesRenderer)){
-            static::$renderer[$viewPath] = new PlatesRenderer($viewPath);
-        }
-        
-        return static::$renderer[$viewPath];
-    }
-    
-    /**
-     * blade
-     *
-     * @param  mixed $viewPath
-     * @return BladeRenderer
-     */
-    static function blade(string $viewPath): BladeRenderer
-    {
-        if(!array_key_exists($viewPath, static::$renderer)){
-            static::$renderer[$viewPath] = new BladeRenderer($viewPath);
-        }elseif(!(static::$renderer[$viewPath] instanceof BladeRenderer)){
-            static::$renderer[$viewPath] = new BladeRenderer($viewPath);
-        }
-        
-        return static::$renderer[$viewPath];
-    }
-        
-    /**
-     * twig
-     *
-     * @param  mixed $viewPath
-     * @return TwigRenderer
-     */
-    static function twig(string $viewPath): TwigRenderer
-    {
-        if(!array_key_exists($viewPath, static::$renderer)){
-            static::$renderer[$viewPath] = new TwigRenderer($viewPath);
-        }elseif(!(static::$renderer[$viewPath] instanceof TwigRenderer)){
-            static::$renderer[$viewPath] = new TwigRenderer($viewPath);
-        }
-        
-        return static::$renderer[$viewPath];
-    }
-    
-    /**
-     * default
-     *
-     * @param  mixed $viewPath
-     * @return ViewRenderer
-     */
-    static function default(string $viewPath): ViewRenderer
-    {
-        if(!array_key_exists($viewPath, static::$renderer)){
-            static::$renderer[$viewPath] = new ViewRenderer($viewPath);
-        }elseif(!(static::$renderer[$viewPath] instanceof ViewRenderer)){
-            static::$renderer[$viewPath] = new ViewRenderer($viewPath);
-        }
-        
-        return static::$renderer[$viewPath];
+        if(static::$renderer === null){
+            static::$renderer = new ViewRenderer($viewPath);
+        }        
+        return static::$renderer;
     }
 }

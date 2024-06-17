@@ -7,9 +7,9 @@ namespace App\Handler;
 use App\Model\DinasKeluarForm;
 use App\Model\DinasKeluarModel;
 use Exception;
-use Laminas\Diactoros\UploadedFile;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\UploadedFileInterface;
 
 class DinasKeluarHandler extends ActionHandler
 {
@@ -32,15 +32,15 @@ class DinasKeluarHandler extends ActionHandler
         }
 
         $query = $request->getQueryParams();
-        if(isset($query['q']) && $query['q']){
+        if (isset($query['q']) && $query['q']) {
             $q = $query['q'];
             $where = "(`nomor_naskah` LIKE '%{$q}%' OR `perihal` LIKE '%{$q}%') AND `tahun`='{$this->tahun}'";
-        }else{
+        } else {
             $where = "`tahun`='{$this->tahun}'";
         }
 
         $params['page'] = 'dinas_keluar';
-        $params['data'] = DinasKeluarModel::paginate($where,'*','tanggal DESC,nomor_naskah DESC');
+        $params['data'] = DinasKeluarModel::paginate($where, '*', 'tanggal DESC,nomor_naskah DESC');
 
 
         return view('template', $params, $response);
@@ -66,29 +66,29 @@ class DinasKeluarHandler extends ActionHandler
 
         $model = new DinasKeluarForm();
         $model->nomor = strval(DinasKeluarModel::getNomorTerakhir($this->tahun) + 1);
-        if ($request->getMethod() === 'POST'){
+        if ($request->getMethod() === 'POST') {
             $model->fill($request->getParsedBody());
             $model->generateNomorNaskah();
-            if ($model->validate() === true){
-                if (DinasKeluarModel::exists(['nomor=' => $model->nomor])){
+            if ($model->validate() === true) {
+                if (DinasKeluarModel::exists(['nomor=' => $model->nomor])) {
                     $model->addError('nomor', "Nomor '{$model->nomor}' sudah ada.");
-                }else{
+                } else {
                     $filename = null;
                     foreach ($request->getUploadedFiles() as $file) {
-                        if ($file instanceof UploadedFile) {
+                        if ($file instanceof UploadedFileInterface) {
                             if ($file->getError() === UPLOAD_ERR_OK && $file->getSize() > 0) {
                                 $fileExt = strtolower(pathinfo($file->getClientFileName(), PATHINFO_EXTENSION));
                                 $allowd_file_ext = 'pdf';
                                 if ($file->getSize() > 8388608) { // 8 MB
                                     $model->addError('form', "Ukuran file lebih dari 4MB.");
-                                }elseif ($fileExt !== $allowd_file_ext) {
+                                } elseif ($fileExt !== $allowd_file_ext) {
                                     $model->addError('form', "Tipe file harus pdf.");
-                                }else {
+                                } else {
                                     $filename = sprintf('%d.pdf', time());
-                                    try{
-                                        $file->moveTo("public/uploads/{$this->tahun}/dinas_keluar/{$filename}");
-                                    }catch(Exception $e){
-                                        $this->session->addFlashError('Upload file surat dinas gagal');
+                                    try {
+                                        $file->moveTo("uploads/{$this->tahun}/dinas_keluar/{$filename}");
+                                    } catch (Exception $e) {
+                                        $this->session->addFlashError('Upload file surat dinas gagal. Error:' . $e->getMessage());
                                         return redirect('dinas_keluar');
                                     }
                                 }
@@ -96,26 +96,27 @@ class DinasKeluarHandler extends ActionHandler
                         }
                     }
                     if (!$model->hasError()) {
-                        if (DinasKeluarModel::create(
-                            [
-                                'akses' => $model->akses,
-                                'nomor' => $model->nomor,
-                                'fungsi' => $model->fungsi,
-                                'klasifikasi' => $model->klasifikasi,
-                                'tahun' => $this->tahun,
-                                'nomor_naskah' => $model->nomor_naskah,
-                                'perihal' => $model->perihal,
-                                'tanggal' => $model->tanggal,
-                                'tujuan' => $model->tujuan,
-                                'file' => $filename,
-                                'keterangan' => $model->keterangan,
-                                'user_create' => auth($request)->getIdentity()->getId(),
-                                'create_at' => time()
-                            ]
-                        ) > 0) {
+                        try {
+                            DinasKeluarModel::create(
+                                [
+                                    'akses' => $model->akses,
+                                    'nomor' => $model->nomor,
+                                    'fungsi' => $model->fungsi,
+                                    'klasifikasi' => $model->klasifikasi,
+                                    'tahun' => $this->tahun,
+                                    'nomor_naskah' => $model->nomor_naskah,
+                                    'perihal' => $model->perihal,
+                                    'tanggal' => $model->tanggal,
+                                    'tujuan' => $model->tujuan,
+                                    'file' => $filename,
+                                    'keterangan' => $model->keterangan,
+                                    'user_create' => auth($request)->getIdentity()->getId(),
+                                    'create_at' => time()
+                                ]
+                            );
                             $this->session->addFlashSuccess('Simpan data berhasil');
-                        }else {
-                            $this->session->addFlashError('Simpan data gagal');
+                        } catch (Exception $e) {
+                            $this->session->addFlashError('Simpan data gagal. Error: ' . $e->getMessage());
                         }
                         return redirect('dinas_keluar');
                     }
@@ -123,7 +124,7 @@ class DinasKeluarHandler extends ActionHandler
             }
         }
 
-        $params['page']='form_dinas_keluar';
+        $params['page'] = 'form_dinas_keluar';
         $params['model'] = $model;
 
         return view('template', $params, $response);
@@ -149,36 +150,34 @@ class DinasKeluarHandler extends ActionHandler
 
         $model = new DinasKeluarForm(true);
         $id = $request->getAttribute('id');
-        if ($id){
+        if ($id) {
             $data = DinasKeluarModel::row('*', ['id=' => $id]);
             $model->fill($data);
         }
-        if ($request->getMethod() === 'POST'){
+        if ($request->getMethod() === 'POST') {
             $model->fill($request->getParsedBody());
             $model->generateNomorNaskah();
-            if ($model->validate() === true){
+            if ($model->validate() === true) {
                 $filename = $data['file'] ?? null;
                 foreach ($request->getUploadedFiles() as $file) {
-                    if ($file instanceof UploadedFile) {
+                    if ($file instanceof UploadedFileInterface) {
                         if ($file->getError() === UPLOAD_ERR_OK && $file->getSize() > 0) {
                             $fileExt = strtolower(pathinfo($file->getClientFileName(), PATHINFO_EXTENSION));
                             $allowd_file_ext = 'pdf';
                             if ($file->getSize() > 8388608) { // 8 MB
                                 $model->addError('form', "Ukuran file lebih dari 4MB.");
-                            }elseif ($fileExt !== $allowd_file_ext) {
+                            } elseif ($fileExt !== $allowd_file_ext) {
                                 $model->addError('form', "Tipe file harus pdf.");
-                            }else {
-                                try{
-                                    $path = "public/uploads/{$this->tahun}/dinas_keluar/";
-                                    if($filename){
-                                        if(file_exists($path .$filename)){
-                                            unlink($path . $filename);
-                                        }
+                            } else {
+                                try {
+                                    $path = "uploads/{$this->tahun}/dinas_keluar/";
+                                    if ($filename && is_file($path . $filename)) {
+                                        unlink($path . $filename);
                                     }
                                     $filename = sprintf('%d.pdf', time());
                                     $file->moveTo($path . $filename);
-                                }catch(Exception $e){
-                                    $this->session->addFlashError('Upload file surat dinas gagal');
+                                } catch (Exception $e) {
+                                    $this->session->addFlashError('Upload file surat dinas gagal. Error:' .  $e->getMessage());
                                     return redirect('dinas_keluar');
                                 }
                             }
@@ -186,35 +185,37 @@ class DinasKeluarHandler extends ActionHandler
                     }
                 }
                 if (!$model->hasError()) {
-                    if (DinasKeluarModel::update(
-                        [
-                            'akses' => $model->akses,
-                            'fungsi' => $model->fungsi,
-                            'klasifikasi' => $model->klasifikasi,
-                            'tahun' => $this->tahun,
-                            'nomor_naskah' => $model->nomor_naskah,
-                            'perihal' => $model->perihal,
-                            'tanggal' => $model->tanggal,
-                            'tujuan' => $model->tujuan,
-                            'file' => $filename,
-                            'keterangan' => $model->keterangan,
-                            'user_update' => auth($request)->getIdentity()->getId(),
-                            'update_at' => time()
-                        ],
-                        [
-                            'id=' => $id
-                        ]
-                    ) >= 0) {
-                        $this->session->addFlashSuccess('Ubah data berhasil');
-                    }else{
-                        $this->session->AddFlashError('Ubah data gagal');
+                    try{
+                        DinasKeluarModel::update(
+                            [
+                                'akses' => $model->akses,
+                                'fungsi' => $model->fungsi,
+                                'klasifikasi' => $model->klasifikasi,
+                                'tahun' => $this->tahun,
+                                'nomor_naskah' => $model->nomor_naskah,
+                                'perihal' => $model->perihal,
+                                'tanggal' => $model->tanggal,
+                                'tujuan' => $model->tujuan,
+                                'file' => $filename,
+                                'keterangan' => $model->keterangan,
+                                'user_update' => auth($request)->getIdentity()->getId(),
+                                'update_at' => time()
+                            ],
+                            [
+                                'id=' => $id
+                            ]
+                            );
+                            $this->session->addFlashSuccess('Ubah data berhasil');
+                    }catch(Exception $e){
+                        $this->session->AddFlashError('Ubah data gagal. Error:' . $e->getMessage());
                     }
+                    
                     return redirect('dinas_keluar');
                 }
             }
         }
 
-        $params['page'] ='form_dinas_keluar';
+        $params['page'] = 'form_dinas_keluar';
         $params['model'] = $model;
 
         return view('template', $params, $response);
@@ -242,21 +243,15 @@ class DinasKeluarHandler extends ActionHandler
         if ($id) {
             $data = DinasKeluarModel::row('*', ['id=' => $id]);
             $filename = $data['file'] ?? null;
-            if ($filename) {
-                try{
-                    $path = "public/uploads/{$this->tahun}/dinas_keluar/";
-                    if(file_exists($path . $filename)){
-                        unlink($path . $filename);
-                    }
-                }catch(Exception $e){
-                    $this->session->addFlashError('Hapus file surat dinas gagal');
-                    return redirect('dinas_keluar');
+            try {
+                $path = "uploads/{$this->tahun}/dinas_keluar/";
+                if ($filename && is_file($path . $filename)) {
+                    unlink($path . $filename);
                 }
-            }
-            if (DinasKeluarModel::delete(['id=' => $id]) > 0) {
+                DinasKeluarModel::delete(['id=' => $id]);
                 $this->session->addFlashSuccess('Hapus data berhasil');
-            } else {
-                $this->session->addFlashError('Hapus data gagal');
+            } catch (Exception $e) {
+                $this->session->addFlashError('Hapus data gagal. Error:' . $e->getMessage());
             }
         }
 

@@ -42,7 +42,7 @@ class Config
      * @param  mixed $defaultValue
      * @return mixed
      */
-    public static function get(mixed $offset, mixed $defaultValue = null): mixed
+    public static function get($offset, $defaultValue = null)
     {
         if (static::$container === null) {
             throw new Exception('Init config by calling init method first.');
@@ -57,7 +57,7 @@ class Config
      * @param  mixed $value
      * @return void
      */
-    public static function set(mixed $offset, mixed $value): void
+    public static function set($offset, $value): void
     {
         if (static::$container === null) {
             throw new Exception('Init config by calling init method first.');
@@ -71,7 +71,7 @@ class Config
      * @param  mixed $offset
      * @return bool
      */
-    public static function has(mixed $offset): bool
+    public static function has($offset): bool
     {
         if (static::$container === null) {
             throw new Exception('Init config by calling init method first.');

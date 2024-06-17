@@ -8,7 +8,7 @@ use Core\Model\FormModel;
 
 class UserForm extends FormModel
 {
-    public ?int $id = null;
+    public $id = null;
     public ?string $username = null;
     public ?string $password = null;
     public ?string $repassword = null;

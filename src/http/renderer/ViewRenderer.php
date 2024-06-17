@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Core\Http\Renderer;
 
+use Core\Helper\Service;
+
 /**
  * ViewRenderer
  * -----------
@@ -16,16 +18,18 @@ namespace Core\Http\Renderer;
 class ViewRenderer extends Renderer
 {
 
+    private string $viewPath;
+
     /**
      * __construct
      *
      * @param  mixed $viewPath
-     * @param  mixed $fileExtension
      * @return void
      */
-    public function __construct(private string $viewPath, private string $fileExtension = '.php')
+    public function __construct(string $viewPath)
     {
-        parent::__construct();
+        $this->session = Service::session();
+        $this->viewPath = $viewPath;
     }
     /**
      * render
@@ -38,7 +42,7 @@ class ViewRenderer extends Renderer
     {
         extract($param, EXTR_SKIP);
         ob_start();
-        include $this->viewPath . '/' . $view . $this->fileExtension;
+        include $this->viewPath . '/' . $view . '.php';
         return ob_get_clean();
     }
 }

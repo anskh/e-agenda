@@ -15,8 +15,8 @@ namespace Core\Http\Auth;
  */
 class UserIdentity implements UserIdentityInterface
 {
-    protected string|int|null $id;
-    protected string|null $name;
+    protected $id;
+    protected ?string $name;
     protected array $roles;
     protected array $permissions;
 
@@ -29,7 +29,7 @@ class UserIdentity implements UserIdentityInterface
      * @param  mixed $permissions
      * @return void
      */
-    public function __construct(string|int|null $id = null, ?string $name = null, array $roles = [], array $permissions = [])
+    public function __construct($id = null, ?string $name = null, array $roles = [], array $permissions = [])
     {
         $this->id = $id;
         $this->name = $name;
@@ -40,18 +40,18 @@ class UserIdentity implements UserIdentityInterface
     /**
      * getId
      *
-     * @return string
+     * @return string|int|null
      */
-    public function getId(): string|int|null
+    public function getId()
     {
         return $this->id;
     }
     /**
      * getName
      *
-     * @return string
+     * @return string|null
      */
-    public function getName(): string|null
+    public function getName()
     {
         return $this->name;
     }

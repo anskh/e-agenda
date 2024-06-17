@@ -125,7 +125,7 @@ abstract class FormModel extends Model
      * @param  mixed $rule
      * @return void
      */
-    public function setRule(string $attribute, mixed $rule): void
+    public function setRule(string $attribute, $rule): void
     {
         if (property_exists($this, $attribute)) {
             $this->rules[$attribute] = $rule;
@@ -425,7 +425,7 @@ abstract class FormModel extends Model
      * @param  mixed $attribute
      * @return string|array
      */
-    public function firstError(?string $attribute = null): array|string
+    public function firstError(?string $attribute = null)
     {
         if ($attribute === null) {
             $message = [];

@@ -41,7 +41,7 @@ abstract class DbModel extends Model
 
         if(!isset($this->table)){
             $arr = explode('\\', static::class);
-            $this->table = strtolower(end($arr));
+            $this->table = $this->db->getTable(strtolower(end($arr)));
         }
         if(empty($this->fields)){
             $this->generateFields();
@@ -54,7 +54,7 @@ abstract class DbModel extends Model
      * @param  mixed $db
      * @return Database
      */
-    protected static function db(null|Database $db = null) : Database
+    protected static function db(?Database $db = null) : Database
     {
         return $db ?? DatabaseFactory::create(AppFactory::create()->connection);
     }
@@ -93,10 +93,10 @@ abstract class DbModel extends Model
     /**
      * load
      *
-     * @param  mixed $pk
+     * @param  string|int $pk
      * @return bool
      */
-    public function load(string|int $pk): bool
+    public function load($pk): bool
     {
         $data = $this->db->select($this->table, '*', [$this->primaryKey . "=" => $pk], 1);
         
@@ -128,10 +128,10 @@ abstract class DbModel extends Model
     /**
      * getRecordCount
      *
-     * @param  mixed $where
+     * @param  array|string|null  $where
      * @return int
      */
-    public function getRecordCount(array|string|null $where = null): int
+    public function getRecordCount($where = null): int
     {
         return $this->db->getRecordCount($this->table, $where);
     }    
@@ -139,10 +139,10 @@ abstract class DbModel extends Model
     /**
      * isExists
      *
-     * @param  mixed $where
+     * @param  array|string|null  $where
      * @return bool
      */
-    public function isExists(array|string|null $where = null): bool
+    public function isExists($where = null): bool
     {
         return $this->db->recordExists(static::table(), $where);
     }
@@ -174,7 +174,7 @@ abstract class DbModel extends Model
     public static function table(): string
     {
         $arr = explode('\\', static::class);
-        return strtolower(end($arr));
+        return static::db()->getTable(strtolower(end($arr)));
     }
     
     /**
@@ -203,12 +203,12 @@ abstract class DbModel extends Model
     /**
      * update
      *
-     * @param  mixed $data
-     * @param  mixed $where
+     * @param  array $data
+     * @param  array|string|null  $where
      * @param  mixed $db
      * @return int
      */
-    public static function update(array $data, array|string|null $where = null,?Database $db=null): int
+    public static function update(array $data, $where = null,?Database $db=null): int
     {
         return static::db($db)->update($data, static::table(), $where);
     }
@@ -216,11 +216,11 @@ abstract class DbModel extends Model
     /**
      * delete
      *
-     * @param  mixed $where
-     * @param  mixed $db
+     * @param  array|string|null  $where
+     * @param  ?Database $db
      * @return int
      */
-    public static function delete(array|string|null $where = null,?Database $db=null): int
+    public static function delete($where = null,?Database $db=null): int
     {
         return static::db($db)->delete(static::table(), $where);
     }
@@ -235,7 +235,7 @@ abstract class DbModel extends Model
      * @param  mixed $db
      * @return array
      */
-    public static function all(string $column = '*', int $limit = 0, int $offset = -1, string|null $orderby = null,?Database $db=null): array
+    public static function all(string $column = '*', int $limit = 0, int $offset = -1, ?string $orderby = null,?Database $db=null): array
     {
         return static::db($db)->select(static::table(), $column, null, $limit, $offset, $orderby);
     }
@@ -250,7 +250,7 @@ abstract class DbModel extends Model
      * @param  mixed $db
      * @return array
      */
-    public static function allColumn(string $column, int $limit = 0, int $offset = -1, string|null $orderby = null, ?Database $db=null): array
+    public static function allColumn(string $column, int $limit = 0, int $offset = -1, ?string $orderby = null, ?Database $db=null): array
     {
         return static::db($db)->select(static::table(), $column, null, $limit, $offset, $orderby, PDO::FETCH_COLUMN);
     }
@@ -258,12 +258,12 @@ abstract class DbModel extends Model
     /**
      * row
      *
-     * @param  mixed $column
-     * @param  mixed $where
-     * @param  mixed $db
+     * @param  string $column
+     * @param  array|string|null  $where
+     * @param  ?Database $db
      * @return array
      */
-    public static function row(string $column = '*', array|string|null $where = null, ?Database $db=null): array
+    public static function row(string $column = '*', $where = null, ?Database $db=null): array
     {       
         return static::db($db)->getRow(static::table(), $column, $where);
     }    
@@ -271,11 +271,11 @@ abstract class DbModel extends Model
     /**
      * recordCount
      *
-     * @param  mixed $where
-     * @param  mixed $db
+     * @param  array|string|null  $where
+     * @param  ?Database $db
      * @return int
      */
-    public static function recordCount(array|string|null $where = null, ?Database $db=null): int
+    public static function recordCount($where = null, ?Database $db=null): int
     {       
         return static::db($db)->getRecordCount(static::table(), $where);
     }
@@ -283,14 +283,14 @@ abstract class DbModel extends Model
     /**
      * find
      *
-     * @param  mixed $where
-     * @param  mixed $column
-     * @param  mixed $limit
-     * @param  mixed $orderby
-     * @param  mixed $db
+     * @param  array|string|null  $where
+     * @param  string $column
+     * @param  int $limit
+     * @param  ?string $orderby
+     * @param  ?Database $db
      * @return array
      */
-    public static function find(array|string|null $where = null, string $column = '*', int $limit = 0, int $offset = -1, string|null $orderby = null, ?Database $db=null): array
+    public static function find($where = null, string $column = '*', int $limit = 0, int $offset = -1, ?string $orderby = null, ?Database $db=null): array
     {
         return static::db($db)->select(static::table(), $column, $where, $limit, $offset, $orderby);
     }
@@ -298,13 +298,13 @@ abstract class DbModel extends Model
     /**
      * paginate
      *
-     * @param  mixed $where
-     * @param  mixed $column
-     * @param  mixed $orderby
-     * @param  mixed $db
+     * @param  array|string|null  $where
+     * @param  string $column
+     * @param  ?string $orderby
+     * @param  ?Database $db
      * @return array
      */
-    public static function paginate(array|string|null $where = null, string $column = '*', string|null $orderby = null, ?Database $db=null): array
+    public static function paginate($where = null, string $column = '*', ?string $orderby = null, ?Database $db=null): array
     {
         $pager = new BootstrapPagination(static::recordCount($where));
         static::$pager = $pager;
@@ -324,15 +324,15 @@ abstract class DbModel extends Model
     /**
      * findColumn
      *
-     * @param  mixed $where
-     * @param  mixed $column
-     * @param  mixed $limit
-     * @param  mixed $offset
-     * @param  mixed $orderby
-     * @param  mixed $db
+     * @param  array|string|null  $where
+     * @param  string $column
+     * @param  int $limit
+     * @param  int $offset
+     * @param  ?string $orderby
+     * @param  ?Database $db
      * @return array
      */
-    public static function findColumn(array|string|null $where = null, string $column = '*', int $limit = 0, int $offset = -1, string|null $orderby = null, ?Database $db=null): array
+    public static function findColumn($where = null, string $column = '*', int $limit = 0, int $offset = -1, ?string $orderby = null, ?Database $db=null): array
     {
         return static::db($db)->select(static::table(), $column, $where, $limit, $offset, $orderby, PDO::FETCH_COLUMN);
     }
@@ -340,11 +340,11 @@ abstract class DbModel extends Model
     /**
      * exists
      *
-     * @param  mixed $where
-     * @param  mixed $db
+     * @param  array|string|null  $where
+     * @param  ?Database $db
      * @return bool
      */
-    public static function exists(array|string|null $where = null, ?Database $db=null): bool
+    public static function exists($where = null, ?Database $db=null): bool
     {
         return static::db($db)->recordExists(static::table(), $where);
     }

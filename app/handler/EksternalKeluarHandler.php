@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace App\Handler;
 
-use App\Model\FungsiModel;
 use App\Model\EksternalKeluarForm;
 use App\Model\EksternalKeluarModel;
 use Exception;
-use Laminas\Diactoros\UploadedFile;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\UploadedFileInterface;
 
 class EksternalKeluarHandler extends ActionHandler
 {
@@ -33,15 +32,15 @@ class EksternalKeluarHandler extends ActionHandler
         }
 
         $query = $request->getQueryParams();
-        if(isset($query['q']) && $query['q']){
+        if (isset($query['q']) && $query['q']) {
             $q = $query['q'];
             $where = "(`nomor_naskah` LIKE '%{$q}%' OR `perihal` LIKE '%{$q}%') AND `tahun`='{$this->tahun}'";
-        }else{
+        } else {
             $where = "`tahun`='{$this->tahun}'";
         }
 
         $params['page'] = 'eksternal_keluar';
-        $params['data'] = EksternalKeluarModel::paginate($where,'*','tanggal DESC,nomor_naskah DESC');
+        $params['data'] = EksternalKeluarModel::paginate($where, '*', 'tanggal DESC,nomor_naskah DESC');
 
         return view('template', $params, $response);
     }
@@ -66,29 +65,29 @@ class EksternalKeluarHandler extends ActionHandler
 
         $model = new EksternalKeluarForm();
         $model->nomor = strval(EksternalKeluarModel::getNomorTerakhir($this->tahun) + 1);
-        if ($request->getMethod() === 'POST'){
+        if ($request->getMethod() === 'POST') {
             $model->fill($request->getParsedBody());
             $model->generateNomorNaskah();
-            if ($model->validate() === true){
-                if (EksternalKeluarModel::exists(['nomor=' => $model->nomor])){
+            if ($model->validate() === true) {
+                if (EksternalKeluarModel::exists(['nomor=' => $model->nomor])) {
                     $model->addError('nomor', "Nomor '{$model->nomor}' sudah ada.");
-                }else{
+                } else {
                     $filename = null;
                     foreach ($request->getUploadedFiles() as $file) {
-                        if ($file instanceof UploadedFile) {
+                        if ($file instanceof UploadedFileInterface) {
                             if ($file->getError() === UPLOAD_ERR_OK && $file->getSize() > 0) {
                                 $fileExt = strtolower(pathinfo($file->getClientFileName(), PATHINFO_EXTENSION));
                                 $allowd_file_ext = 'pdf';
                                 if ($file->getSize() > 8388608) { // 8 MB
                                     $model->addError('form', "Ukuran file lebih dari 4MB.");
-                                }elseif ($fileExt !== $allowd_file_ext) {
+                                } elseif ($fileExt !== $allowd_file_ext) {
                                     $model->addError('form', "Tipe file harus pdf.");
-                                }else {
+                                } else {
                                     $filename = sprintf('%d.pdf', time());
-                                    try{
-                                        $file->moveTo("public/uploads/{$this->tahun}/eksternal_keluar/{$filename}");
-                                    }catch(Exception $e){
-                                        $this->session->addFlashError('Upload file surat eksternal gagal');
+                                    try {
+                                        $file->moveTo("uploads/{$this->tahun}/eksternal_keluar/{$filename}");
+                                    } catch (Exception $e) {
+                                        $this->session->addFlashError('Upload file surat eksternal gagal. Error:' . $e->getMessage());
                                         return redirect('eksternal_keluar');
                                     }
                                 }
@@ -96,34 +95,36 @@ class EksternalKeluarHandler extends ActionHandler
                         }
                     }
                     if (!$model->hasError()) {
-                        if (EksternalKeluarModel::create(
-                            [
-                                'akses' => $model->akses,
-                                'nomor' => $model->nomor,
-                                'fungsi' => $model->fungsi,
-                                'klasifikasi' => $model->klasifikasi,
-                                'tahun' => $this->tahun,
-                                'nomor_naskah' => $model->nomor_naskah,
-                                'perihal' => $model->perihal,
-                                'tanggal' => $model->tanggal,
-                                'tujuan' => $model->tujuan,
-                                'file' => $filename,
-                                'keterangan' => $model->keterangan,
-                                'user_create' => $this->user->getIdentity()->getId(),
-                                'create_at' => time()
-                            ]
-                        ) > 0) {
+                        try {
+                            EksternalKeluarModel::create(
+                                [
+                                    'akses' => $model->akses,
+                                    'nomor' => $model->nomor,
+                                    'fungsi' => $model->fungsi,
+                                    'klasifikasi' => $model->klasifikasi,
+                                    'tahun' => $this->tahun,
+                                    'nomor_naskah' => $model->nomor_naskah,
+                                    'perihal' => $model->perihal,
+                                    'tanggal' => $model->tanggal,
+                                    'tujuan' => $model->tujuan,
+                                    'file' => $filename,
+                                    'keterangan' => $model->keterangan,
+                                    'user_create' => $this->user->getIdentity()->getId(),
+                                    'create_at' => time()
+                                ]
+                            );
                             $this->session->addFlashSuccess('Simpan data berhasil');
-                        }else {
-                            $this->session->addFlashError('Simpan data gagal');
+                        } catch (Exception $e) {
+                            $this->session->addFlashError('Simpan data gagal. Error:' . $e->getMessage());
                         }
+
                         return redirect('eksternal_keluar');
                     }
                 }
             }
         }
 
-        $params['page']='form_eksternal_keluar';
+        $params['page'] = 'form_eksternal_keluar';
         $params['model'] = $model;
 
         return view('template', $params, $response);
@@ -149,72 +150,72 @@ class EksternalKeluarHandler extends ActionHandler
 
         $model = new EksternalKeluarForm(true);
         $id = $request->getAttribute('id');
-        if ($id){
+        if ($id) {
             $data = EksternalKeluarModel::row('*', ['id=' => $id]);
             $model->fill($data);
         }
-        if ($request->getMethod() === 'POST'){
+        if ($request->getMethod() === 'POST') {
             $model->fill($request->getParsedBody());
             $model->generateNomorNaskah();
-            if ($model->validate() === true){
+            if ($model->validate() === true) {
                 $filename = $data['file'] ?? null;
                 foreach ($request->getUploadedFiles() as $file) {
-                    if ($file instanceof UploadedFile) {
+                    if ($file instanceof UploadedFileInterface) {
                         if ($file->getError() === UPLOAD_ERR_OK && $file->getSize() > 0) {
                             $fileExt = strtolower(pathinfo($file->getClientFileName(), PATHINFO_EXTENSION));
                             $allowd_file_ext = 'pdf';
                             if ($file->getSize() > 8388608) { // 8 MB
                                 $model->addError('form', "Ukuran file lebih dari 4MB.");
-                            }elseif ($fileExt !== $allowd_file_ext) {
+                            } elseif ($fileExt !== $allowd_file_ext) {
                                 $model->addError('form', "Tipe file harus pdf.");
-                            }else {
-                                try{
-                                    $path = "public/uploads/{$this->tahun}/eksternal_keluar/";
-                                    if($filename){
-                                        if(file_exists($path .$filename)){
-                                            unlink($path . $filename);
-                                        }
+                            } else {
+                                try {
+                                    $path = "uploads/{$this->tahun}/eksternal_keluar/";
+                                    if ($filename && is_file($path . $filename)) {
+                                        unlink($path . $filename);
                                     }
                                     $filename = sprintf('%d.pdf', time());
                                     $file->moveTo($path . $filename);
-                                }catch(Exception $e){
-                                    $this->session->addFlashError('Upload file surat eksternal gagal');
-                                    return redirect('eksternal_keluar');
+                                } catch (Exception $e) {
+                                    $this->session->addFlashError('Upload file surat eksternal gagal. Error:' . $e->getMessage());
                                 }
+                                return redirect('eksternal_keluar');
                             }
                         }
                     }
                 }
                 if (!$model->hasError()) {
-                    if (EksternalKeluarModel::update(
-                        [
-                            'akses' => $model->akses,
-                            'fungsi' => $model->fungsi,
-                            'klasifikasi' => $model->klasifikasi,
-                            'tahun' => $this->tahun,
-                            'nomor_naskah' => $model->nomor_naskah,
-                            'perihal' => $model->perihal,
-                            'tanggal' => $model->tanggal,
-                            'tujuan' => $model->tujuan,
-                            'file' => $filename,
-                            'keterangan' => $model->keterangan,
-                            'user_update' => $this->user->getIdentity()->getId(),
-                            'update_at' => time()
-                        ],
-                        [
-                            'id=' => $id
-                        ]
-                    ) >= 0) {
+                    try {
+                        EksternalKeluarModel::update(
+                            [
+                                'akses' => $model->akses,
+                                'fungsi' => $model->fungsi,
+                                'klasifikasi' => $model->klasifikasi,
+                                'tahun' => $this->tahun,
+                                'nomor_naskah' => $model->nomor_naskah,
+                                'perihal' => $model->perihal,
+                                'tanggal' => $model->tanggal,
+                                'tujuan' => $model->tujuan,
+                                'file' => $filename,
+                                'keterangan' => $model->keterangan,
+                                'user_update' => $this->user->getIdentity()->getId(),
+                                'update_at' => time()
+                            ],
+                            [
+                                'id=' => $id
+                            ]
+                        );
                         $this->session->addFlashSuccess('Ubah data berhasil');
-                    }else{
-                        $this->session->addFlashError('Ubah data gagal');
+                    } catch (Exception $e) {
+                        $this->session->addFlashError('Ubah data gagal.Error:' . $e->getMessage());
                     }
+
                     return redirect('eksternal_keluar');
                 }
             }
         }
 
-        $params['page']='form_eksternal_keluar';
+        $params['page'] = 'form_eksternal_keluar';
         $params['model'] = $model;
 
         return view('template', $params, $response);
@@ -242,22 +243,16 @@ class EksternalKeluarHandler extends ActionHandler
         if ($id) {
             $data = EksternalKeluarModel::row('*', ['id=' => $id]);
             $filename = $data['file'] ?? null;
-            if ($filename) {
-                try{
-                    $path = "public/uploads/{$this->tahun}/eksternal_keluar/";
-                    if(file_exists($path . $filename)){
-                        unlink($path . $filename);
-                    }
-                }catch(Exception $e){
-                    $this->session->addFlashError('Hapus file surat undangan eksternal gagal');
-                    return redirect('eksternal_keluar');
+            try {
+                $path = "uploads/{$this->tahun}/eksternal_keluar/";
+                if ($filename && is_file($path . $filename)) {
+                    unlink($path . $filename);
                 }
+                EksternalKeluarModel::delete(['id=' => $id]);
+            } catch (Exception $e) {
+                $this->session->addFlashError('Hapus data gagal. Error:' . $e->getMessage());
             }
-            if (EksternalKeluarModel::delete(['id=' => $id]) > 0) {
-                $this->session->addFlashSuccess('Hapus data berhasil');
-            } else {
-                $this->session->addFlashError('Hapus data gagal');
-            }
+            return redirect('eksternal_keluar');
         }
 
         return redirect('eksternal_keluar');

@@ -6,9 +6,9 @@ namespace App\Handler;
 
 use App\Model\NotaKeluarForm;
 use App\Model\NotaKeluarModel;
-use Laminas\Diactoros\UploadedFile;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\UploadedFileInterface;
 use Throwable;
 
 class NotaKeluarHandler extends ActionHandler
@@ -74,7 +74,7 @@ class NotaKeluarHandler extends ActionHandler
                 }else{
                     $filename = null;
                     foreach ($request->getUploadedFiles() as $file) {
-                        if ($file instanceof UploadedFile) {
+                        if ($file instanceof UploadedFileInterface) {
                             if ($file->getError() === UPLOAD_ERR_OK && $file->getSize() > 0) {
                                 $fileExt = strtolower(pathinfo($file->getClientFileName(), PATHINFO_EXTENSION));
                                 $allowd_file_ext = 'pdf';
@@ -83,12 +83,12 @@ class NotaKeluarHandler extends ActionHandler
                                 }elseif ($fileExt !== $allowd_file_ext) {
                                     $model->addError('form', "Tipe file harus pdf.");
                                 }else {
-                                    $path = "public/uploads/{$this->tahun}/nota_keluar/";
+                                    $path = "uploads/{$this->tahun}/nota_keluar/";
                                     $filename = sprintf('%d.pdf', time());
                                     try{
                                         $file->moveTo($path . $filename);
                                     }catch(Throwable $e){
-                                        $this->session->addFlashError('Upload file nota gagal');
+                                        $this->session->addFlashError('Upload file nota gagal. Error:'.$e->getMessage());
                                         return redirect('nota_keluar');
                                     }
                                 }
@@ -157,7 +157,7 @@ class NotaKeluarHandler extends ActionHandler
             if ($model->validate() === true){
                 $filename = $data['file'] ?? null;
                 foreach ($request->getUploadedFiles() as $file) {
-                    if ($file instanceof UploadedFile) {
+                    if ($file instanceof UploadedFileInterface) {
                         if ($file->getError() === UPLOAD_ERR_OK && $file->getSize() > 0) {
                             $fileExt = strtolower(pathinfo($file->getClientFileName(), PATHINFO_EXTENSION));
                             $allowd_file_ext = 'pdf';
@@ -167,16 +167,14 @@ class NotaKeluarHandler extends ActionHandler
                                 $model->addError('form', "Tipe file harus pdf.");
                             }else {
                                 try{
-                                    $path = "public/uploads/{$this->tahun}/nota_keluar/";
-                                    if($filename){
-                                        if(file_exists($path .$filename)){
-                                            unlink($path . $filename);
-                                        }
+                                    $path = "uploads/{$this->tahun}/nota_keluar/";
+                                    if($filename && is_file($path .$filename)){
+                                        unlink($path . $filename);
                                     }
                                     $filename = sprintf('%d.pdf', time());
                                     $file->moveTo($path . $filename);
                                 }catch(Throwable $e){
-                                    $this->session->addFlashError('Upload file nota gagal');
+                                    $this->session->addFlashError('Upload file nota gagal. Error:'.$e->getMessage());
                                     return redirect('nota_keluar');
                                 }
                             }
@@ -240,21 +238,16 @@ class NotaKeluarHandler extends ActionHandler
         if ($id) {
             $data = NotaKeluarModel::row('*', ['id=' => $id]);
             $filename = $data['file'] ?? null;
-            if ($filename) {
-                try{
-                    $path = "public/uploads/{$this->tahun}/nota_keluar/";
-                    if(file_exists($path .$filename)){
-                        unlink($path . $filename);
-                    }
-                }catch(Throwable $e){
-                    $this->session->addFlashError('Hapus file nota gagal');
-                    return redirect('nota_keluar');
+
+            try{
+                $path = "uploads/{$this->tahun}/nota_keluar/";
+                if($filename && is_file($path .$filename)){
+                    unlink($path . $filename);
                 }
-            }
-            if (NotaKeluarModel::delete(['id=' => $id]) > 0) {
+                NotaKeluarModel::delete(['id=' => $id]);
                 $this->session->addFlashSuccess('Hapus data berhasil');
-            } else {
-                $this->session->addFlashError('info', 'Hapus data gagal');
+            }catch(Throwable $e){
+                $this->session->addFlashError('Hapus data gagal. Error:'.$e->getMessage());
             }
         }
         
